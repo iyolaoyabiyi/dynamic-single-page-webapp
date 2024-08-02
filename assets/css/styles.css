@@ -47,6 +47,7 @@ header {
 }
 .header-logo {
   padding-left: 4rem;
+  cursor: pointer;
 }
 .header-logo img {
   min-width: 50px;
