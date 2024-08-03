@@ -1,4 +1,76 @@
+// Preload resource
+let resourceCount = 0;
+const imgUrls = [
+  './assets/images/bgs/desktop/background-home-desktop.jpg',
+  './assets/images/bgs/tab/background-home-tablet.jpg',
+  './assets/images/bgs/mobile/background-home-mobile.jpg',
+  './assets/images/bgs/desktop/background-destination-desktop.jpg',
+  './assets/images/bgs/tab/background-destination-tablet.jpg',
+  './assets/images/bgs/mobile/background-destination-mobile.jpg',
+  './assets/images/bgs/desktop/background-technology-desktop.jpg', 
+  './assets/images/bgs/tab/background-technology-tablet.jpg', 
+  './assets/images/bgs/mobile/background-technology-mobile.jpg',
+  './assets/images/bgs/desktop/background-crew-desktop.jpg', 
+  './assets/images/bgs/tab/background-crew-tablet.jpg', 
+  './assets/images/bgs/mobile/background-crew-mobile.jpg',
+  "./assets/images/destination/image-moon.png",
+  "./assets/images/destination/image-mars.png",
+  "./assets/images/destination/image-europa.png",
+  "./assets/images/destination/image-titan.png",
+  "./assets/images/crew/image-douglas-hurley.png",
+  "./assets/images/crew/image-mark-shuttleworth.png",
+  "./assets/images/crew/image-victor-glover.png",
+  "./assets/images/crew/image-anousheh-ansari.png",
+  "./assets/images/technology/image-launch-vehicle-portrait.jpg",
+  "./assets/images/technology/image-spaceport-portrait.jpg",
+  "./assets/images/technology/image-space-capsule-portrait.jpg",
+];
+function preloadImage(url) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.src = url;
+    img.onload = () => {
+      res(img);
+      resourceCount += 1
+    };
+    img.onerror = () => {
+      resourceCount += 1
+      rej('Error preloading resource');
+    }
+  }); 
+}
+async function preloadAll(urls) {
+  const imgCache = {};
+  urls.forEach(async url => {
+    try {
+      const img = await preloadImage(url);
+      imgCache[url] = img;
+      if (resourceCount === urls.length) {
+        setLoader(loader, 'hide');
+      } else {
+        setLoader(loader);
+      }
+    } catch (err) {
+      console.log(`Unable to load ${url}`, err)
+    }
+  });
+  return imgCache;
+}
+function setLoader(loader, mode) {
+  switch(mode) {
+    case 'hide':
+      loader.classList.add('hidden');
+      break;
+    default:
+      loader.classList.remove('hidden');
+      break;
+  }
+}
+// Load Resources
 window.addEventListener('DOMContentLoaded', async () => {
+  // Loader
+  const loader = document.getElementById('loader');
+  const imgCache = await preloadAll(imgUrls);
   const docBody = document.body;
   const headerLogo = document.querySelector('.header-logo');
   // Navs
@@ -57,6 +129,37 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
   function activateNav(nav) {
     nav.classList.add('active')
+  }
+  function changeBg(urls, cache) {
+    let imgUrl = '';
+    function checkCache(url) {
+      if (cache[url]) {
+        imgUrl = url;
+      } else {
+        imgUrl = './assets/images/bgs/desktop/background-home-desktop.jpg';
+        console.log('Error');
+      }
+    }
+    switch (checkBreakpoint()) {
+      case 'desktop':
+        checkCache(urls[0]);
+        break;
+      case 'tab':
+        imgUrl = urls[1];
+        break;
+      case 'mobile':
+        imgUrl = urls[2];
+        break;
+    }
+    docBody.style.background = `url('${imgUrl}'`;
+    docBody.style.backgroundSize = 'cover';
+  }
+  function setImg(el, url, cache) {
+    if(cache[url]) {
+      el.src = cache[url].src;
+    } else {
+      el.src = './assets/images/technology/image-spaceport-portrait.jpg';
+    }
   }
   // Site Options
   const sectionsData = await fetchData('./assets/data.json', 'json');
@@ -123,29 +226,14 @@ window.addEventListener('DOMContentLoaded', async () => {
         btn.classList.remove('active');
       });
     }
-    function changeBg(urls) {
-      let imgUrl = '';
-      switch (checkBreakpoint()) {
-        case 'desktop':
-          imgUrl = urls[0];
-          break;
-        case 'tab':
-          imgUrl = urls[1];
-          break;
-        case 'mobile':
-          imgUrl = urls[2];
-          break;
-      }
-      docBody.style.background = `url('${imgUrl}'`;
-      docBody.style.backgroundSize = 'cover';
-    }
+    
     this.name = name;
     this.class = elClass;
     this.bgs = bgs;
     this.sect = sect;
     this.show = function() {
       clearDisplay();
-      changeBg(this.bgs);
+      changeBg(this.bgs, imgCache);
       btn.classList.add('active');
       sect.style.display = name === 'home' ? 'grid' : 'block';
     }
@@ -211,7 +299,8 @@ window.addEventListener('DOMContentLoaded', async () => {
           btn.classList.remove('active');
         });
         nameEl.textContent = this.name;
-        imageEl.src = this.images.png ?? this.images.portrait
+        // imageEl.src = this.images.png ?? this.images.portrait;
+        setImg(imageEl,(this.images.png ?? this.images.portrait), imgCache)
         descriptionEl.textContent = this.description ?? this.bio;
         if (pageName === 'destinations') {
           distanceEl.textContent = this.distance;
