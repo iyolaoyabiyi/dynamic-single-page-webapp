@@ -120,12 +120,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
   }
   async function fetchData(url, type) {
-    const data = await fetch(url);
-    let result;
+    let data = await fetch(url);
     if (type === 'json') {
-      result = await data.json();
+      data = await data.json();
     }
-    return result;
+    return data;
   }
   function activateNav(nav) {
     nav.classList.add('active')
