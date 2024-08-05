@@ -126,6 +126,14 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
     return data;
   }
+  function clearDisplay() {
+    pageSects.forEach(sect => {
+      sect.style.display = 'none';
+    });
+    pageNavBtns.forEach(btn => {
+      btn.classList.remove('active');
+    });
+  }
   function activateNav(nav) {
     nav.classList.add('active')
   }
@@ -165,6 +173,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   const destData = sectionsData.destinations;
   const crewData = sectionsData.crew;
   const techData = sectionsData.technology;
+  const [moonData, marsData, europaData, titanData] = destData;
+  const [commanderData, specialistData, pilotData, engineerData] = crewData;
+  const [launchVehicleData, spacePortData, spaceCapsuleData] = techData;
   const pages = {
     home: {
       name: 'home',
@@ -216,33 +227,28 @@ window.addEventListener('DOMContentLoaded', async () => {
     mobileNav.classList.toggle('hidden');
   }
   // Pages Constructor
-  function Page({name, elClass, bgs, btn, sect}) {
-    function clearDisplay() {
-      pageSects.forEach(sect => {
-        sect.style.display = 'none';
-      });
-      pageNavBtns.forEach(btn => {
-        btn.classList.remove('active');
-      });
-    }
-    
-    this.name = name;
-    this.class = elClass;
-    this.bgs = bgs;
-    this.sect = sect;
-    this.show = function() {
-      clearDisplay();
-      changeBg(this.bgs, imgCache);
-      btn.classList.add('active');
-      sect.style.display = name === 'home' ? 'grid' : 'block';
+  class Page {
+    constructor({ name, elClass, bgs, btn, sect }) {
+      this.name = name;
+      this.class = elClass;
+      this.bgs = bgs;
+      this.sect = sect;
+      this.show = function () {
+        clearDisplay();
+        changeBg(this.bgs, imgCache);
+        btn.classList.add('active');
+        sect.style.display = name === 'home' ? 'grid' : 'block';
+      };
     }
   }
   // Section Construction
-  function SectElems(sectName, sectImg, sectDesc, sectNavBtn) {
-    this.sectName = sectName;
-    this.sectImg = sectImg;
-    this.sectDesc = sectDesc;
-    this.sectNavBtn = sectNavBtn;
+  class SectElems {
+    constructor(sectName, sectImg, sectDesc, sectNavBtn) {
+      this.sectName = sectName;
+      this.sectImg = sectImg;
+      this.sectDesc = sectDesc;
+      this.sectNavBtn = sectNavBtn;
+    }
   }
   const sections = {
     dest: {
@@ -261,117 +267,91 @@ window.addEventListener('DOMContentLoaded', async () => {
       ...new SectElems(techNameEl, techImgEl, techDescEl, techNav)
     }
   }
-  function Section({name, sectName, sectImg, sectDesc, sectNavBtn, sectRole, sectDist, sectTrav }) {
-    const navBtns = sectNavBtn.querySelectorAll('button');
-    let [moonBtn, marsBtn, europaBtn, titanBtn] = [];
-    let [commanderBtn, specialistBtn, pilotBtn, engrBtn] = [];
-    let [launchVBtn, spaceportBtn, capsuleBtn] = [];
-    const pageName = name;
-    const nameEl = sectName;
-    const imageEl = sectImg;
-    const descriptionEl = sectDesc ?? '';
-    const distanceEl = sectDist ?? '';
-    const travelEl = sectTrav ?? '';
-    const roleEl = sectRole ?? '';
-    if(pageName === 'destinations') {
-      [moonBtn, marsBtn, europaBtn, titanBtn] = navBtns;
-    } else if(pageName === 'crew') {
-      [commanderBtn, specialistBtn, pilotBtn, engrBtn] = navBtns
-    } else if(pageName === 'technology') {
-      [launchVBtn, spaceportBtn, capsuleBtn] = navBtns
-    }
-    return function({ name, images, description, bio, role, distance, travel }) {
-      this.name = name;
-      this.images = images;
-      if(pageName === 'crew') {
-        this.description = bio;
-        this.role = role;
-      } else if(pageName === 'destinations') {
-        this.distance = distance;
-        this.travel = travel;
-        this.description = description;
-      } else {
-        this.description = description;
-      }
-      this.setOption = function() {
-        navBtns.forEach(btn => {
-          btn.classList.remove('active');
-        });
-        nameEl.textContent = this.name;
-        // imageEl.src = this.images.png ?? this.images.portrait;
-        setImg(imageEl,(this.images.png ?? this.images.portrait), imgCache)
-        descriptionEl.textContent = this.description ?? this.bio;
-        if (pageName === 'destinations') {
-          distanceEl.textContent = this.distance;
-          travelEl.textContent = this.travel;
-          switch (this.name.toLowerCase()) {
-            case 'moon':
-              activateNav(moonBtn);
-              break;
-            case 'mars':
-              activateNav(marsBtn);
-              break;
-            case 'europa':
-              activateNav(europaBtn);
-              break;
-            case 'titan':
-              activateNav(titanBtn);
-              break;
-          }
-        } else if (pageName === 'crew') {
-          roleEl.textContent = this.role;
-          switch (this.role.toLowerCase()) {
-            case 'commander':
-              activateNav(commanderBtn);
-              break;
-            case 'mission specialist':
-              activateNav(specialistBtn);
-              break;
-            case 'pilot':
-              activateNav(pilotBtn);
-              break;
-            case 'flight engineer':
-              activateNav(engrBtn);
-              break;
-          }
-        } else if (pageName === 'technology') {
-          switch (this.name.toLowerCase()) {
-            case 'launch vehicle':
-              activateNav(launchVBtn);
-              break;
-            case 'spaceport':
-              activateNav(spaceportBtn);
-              break;
-            case 'space capsule':
-              activateNav(capsuleBtn);
-              break;
-          }
+  class Section {
+    constructor({name, sectName, sectImg, sectDesc, sectNavBtn, sectRole, sectDist, sectTrav }) {
+    this.pageName = name;
+    this.nameEl = sectName;
+    this.imageEl = sectImg;
+    this.descriptionEl = sectDesc ?? '';
+    this.distanceEl = sectDist ?? '';
+    this.travelEl = sectTrav ?? '';
+    this.roleEl = sectRole ?? '';
+    this.navBtns = sectNavBtn.querySelectorAll('button');
+  }
+  setOption(data) {
+    const { name, images, description, bio, role, distance, travel } = data;
+    this.navBtns.forEach(btn => btn.classList.remove('active'));
+    this.nameEl.textContent = name;
+    this.descriptionEl.textContent = description ?? bio;
+    setImg(this.imageEl, (images.png ?? images.portrait), imgCache);
+    switch (this.pageName) {
+      case 'destinations':
+        const [moonBtn, marsBtn, europaBtn, titanBtn] = this.navBtns;
+        this.distanceEl.textContent = distance;
+        this.travelEl.textContent = travel;
+        switch (name.toLowerCase()) {
+          case 'moon':
+            activateNav(moonBtn);
+            break;
+          case 'mars':
+            activateNav(marsBtn);
+            break;
+          case 'europa':
+            activateNav(europaBtn);
+            break;
+          case 'titan':
+            activateNav(titanBtn);
+            break;
         }
-      }
+        break;
+      case 'crew':
+        const [commanderBtn, specialistBtn, pilotBtn, engrBtn] = this.navBtns
+        this.roleEl.textContent = role;
+        switch (role.toLowerCase()) {
+          case 'commander':
+            activateNav(commanderBtn);
+            break;
+          case 'mission specialist':
+            activateNav(specialistBtn);
+            break;
+          case 'pilot':
+            activateNav(pilotBtn);
+            break;
+          case 'flight engineer':
+            activateNav(engrBtn);
+            break;
+        }
+        break;
+      case 'technology':
+        const [launchVBtn, spaceportBtn, capsuleBtn] = this.navBtns;
+        switch (name.toLowerCase()) {
+          case 'launch vehicle':
+            activateNav(launchVBtn);
+            break;
+          case 'spaceport':
+            activateNav(spaceportBtn);
+            break;
+          case 'space capsule':
+            activateNav(capsuleBtn);
+            break;
+        }
+        break;
+      default:
+        break;
     }
   }
+}
   // Make Pages
   const homePage = new Page(pages.home);
   const destPage = new Page(pages.dest);
   const crewPage = new Page(pages.crew);
   const techPage = new Page(pages.tech);
-  // Destinations Section
-  const Destination = new Section(sections.dest);
-  const moon = new Destination(destData[0]);
-  const mars = new Destination(destData[1]);
-  const europa = new Destination(destData[2]);
-  const titan = new Destination(destData[3]);
-  // Crew Sections
-  const Crew = new Section(sections.crew);
-  const commander = new Crew(crewData[0]);
-  const specialist = new Crew(crewData[1]);
-  const pilot = new Crew(crewData[2]);
-  const engr = new Crew(crewData[3]);
-  // Tech Sections
-  const Tech = new Section(sections.tech);
-  const launchVehicle = new Tech(techData[0]);
-  const spaceport = new Tech(techData[1]);
-  const spaceCapsule = new Tech(techData[2]);
+  // Destination Section
+  const destinations = new Section(sections.dest);
+  // Crew Section
+  const crew = new Section(sections.crew);
+  // Tech Section
+  const tech = new Section(sections.tech);
   // Switch Pages
   function switchPage(e) {
     const targetEl = e.target;
@@ -391,37 +371,41 @@ window.addEventListener('DOMContentLoaded', async () => {
     const targetEl = e.target;
       switch (targetEl.id) {
         case 'moonBtn':
-          moon.setOption();
+          // moon.setOption();
+          destinations.setOption(moonData);
           break;
         case 'marsBtn':
-          mars.setOption();
+          // mars.setOption();
+          destinations.setOption(marsData);
           break;
         case 'europaBtn':
-          europa.setOption();
+          // europa.setOption();
+          destinations.setOption(europaData);
           break;
         case 'titanBtn':
-          titan.setOption();
+          // titan.setOption();
+          destinations.setOption(titanData);
           break;
         case 'crew1':
-          commander.setOption();
+          crew.setOption(commanderData);
           break;
         case 'crew2':
-          specialist.setOption();
+          crew.setOption(specialistData);
           break;
         case 'crew3':
-          pilot.setOption();
+          crew.setOption(pilotData);
           break;
         case 'crew4':
-          engr.setOption();
+          crew.setOption(engineerData);
           break;
         case 'tech1':
-          launchVehicle.setOption();
+          tech.setOption(launchVehicleData);
           break;
         case 'tech2':
-          spaceport.setOption();
+          tech.setOption(spacePortData);
           break;
         case 'tech3':
-          spaceCapsule.setOption();
+          tech.setOption(spaceCapsuleData);
           break;
         default:
          homePage.show();
